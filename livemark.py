@@ -147,6 +147,9 @@ class Preview(Div):
 
     @asyncio.coroutine
     def move_cursor(self, line):
+        if line < 0:
+            return
+
         blank_lines = 0
         i = 1
         while i < line:
