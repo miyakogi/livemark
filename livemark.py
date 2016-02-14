@@ -12,11 +12,8 @@ from tornado import web
 from tornado import websocket
 from tornado.platform.asyncio import AsyncIOMainLoop
 
-import misaka as m
-from pygments import highlight
 from pygments.styles import STYLE_MAP
 from pygments.formatters import HtmlFormatter
-from pygments.lexers import get_lexer_by_name, PythonLexer
 
 current_dir = path.dirname(__file__)
 sys.path.insert(0, path.join(current_dir, 'wdom'))
@@ -26,6 +23,8 @@ from wdom.tag import Div, Style, H2, Script, WebElement
 from wdom.document import get_document
 from wdom.server import get_app, start_server
 from wdom.parser import parse_html
+
+from converter import convert
 
 
 connections = []
@@ -48,23 +47,6 @@ options.parser.define('js-files', default=[], nargs='+')
 options.parser.define('css-files', default=[], nargs='+')
 options.parser.define('highlight-theme', default='default', type=str)
 
-
-class HighlighterRenderer(m.HtmlRenderer):
-    def blockcode(self, text, lang):
-        if not lang:
-            return '\n<pre><code>{}</code></pre>\n'.format(text)
-        else:
-            lexer = get_lexer_by_name('python', stripall=True)
-            lexer = PythonLexer()
-            formatter = HtmlFormatter()
-            html = highlight(text, lexer, formatter)
-            return html
-
-
-converter = m.Markdown(HighlighterRenderer(), extensions=(
-    'fenced-code',
-    'tables',
-))
 
 
 class MainHandler(web.RequestHandler):
@@ -146,16 +128,16 @@ class Preview(Div):
     def convert_to_html(self, tlist):
         md = '\n'.join(tlist)
         yield from asyncio.sleep(0.0)
-        return converter(md)
+        return convert(md)
 
     @asyncio.coroutine
     def mount_html(self, html):
         fragment = parse_html(html)
-        self.dom_tree = fragment
+        self.dom_tree = fragment.cloneNode(True)
         if self.length < 1:
-            self.appendChild(self.dom_tree)
+            self.appendChild(fragment)
         else:
-            diff = yield from self.find_diff_node(self.dom_tree)
+            diff = yield from self.find_diff_node(fragment)
             for _i in diff['inserted']:
                 self.insertBefore(_i[1], _i[0])
             for _d in diff['deleted']:
@@ -167,13 +149,10 @@ class Preview(Div):
     def move_cursor(self, line):
         blank_lines = 0
         i = 1
-        while i < len(self.tlist):
+        while i < line:
             if self.tlist[i] == '' and self.tlist[i - 1] == '':
                 blank_lines += 1
-                i += 1
-                continue
-            else:
-                i += 1
+            i += 1
         cur_line = line - blank_lines
 
         node_n = 0
@@ -191,7 +170,7 @@ class Preview(Div):
             if node_n >= len(self):
                 top_node = self.lastChild
             else:
-                top_node = self.childNodes[node_n]
+                top_node = self.childNodes[node_n - 1]
             if top_node is not None:
                 if isinstance(top_node, WebElement):
                     self.move_to(top_node.id)
