@@ -274,6 +274,7 @@ def main():
     AsyncIOMainLoop().install()
 
     doc = get_document()
+    doc.title = 'LiveMark'
     _user_static_dirs = set()
     for js in options.config.js_files:
         _user_static_dirs.add(path.dirname(js))
