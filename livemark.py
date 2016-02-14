@@ -68,7 +68,7 @@ class SocketListener(asyncio.Protocol):
 
 def _is_same_node(node1, node2):
     if node1.nodeType == node2.nodeType:
-        if node1.nodeType == node1.TEXT_NODE:
+        if node1.nodeType in (node1.TEXT_NODE, node1.COMMENT_NODE):
             return node1.textContent == node2.textContent
         else:
             return node1.html_noid == node2.html_noid
@@ -152,7 +152,7 @@ class Preview(Div):
 
         blank_lines = 0
         i = 1
-        while i < line:
+        while i < line and i < len(self.tlist):
             if self.tlist[i] == '' and self.tlist[i - 1] == '':
                 blank_lines += 1
             i += 1
