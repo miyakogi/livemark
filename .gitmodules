@@ -1,0 +1,3 @@
+[submodule "wdom"]
+	path = wdom
+	url = https://github.com/miyakogi/wdom_py
