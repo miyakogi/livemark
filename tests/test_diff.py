@@ -102,6 +102,24 @@ class TextFindDiffNode(TestCase):
         self.assertEqual(len(diff.get('appended')), 1)
 
     @sync
+    async def test_append_blank_end(self):
+        new_html = self.html + '\n\n\n\n'
+        new_node = parse_html(new_html)
+        diff = await find_diff_node(self.base_node, new_node)
+        self.assertEmpty(diff.get('deleted'))
+        self.assertEmpty(diff.get('inserted'))
+        self.assertEmpty(diff.get('appended'))
+
+    @sync
+    async def test_append_end_trailing_nl(self):
+        new_html = self.html + '\n<h1>text7</h1>\n\n\n'
+        new_node = parse_html(new_html)
+        diff = await find_diff_node(self.base_node, new_node)
+        self.assertEmpty(diff.get('deleted'))
+        self.assertEmpty(diff.get('inserted'))
+        self.assertEqual(len(diff.get('appended')), 1)
+
+    @sync
     async def test_delete_end(self):
         new_html = self.html.replace('<h6>text6</h6>', '')
         new_node = parse_html(new_html)
@@ -116,6 +134,15 @@ class TextFindDiffNode(TestCase):
         new_node = parse_html(new_html)
         diff = await find_diff_node(self.base_node, new_node)
         self.assertEqual(len(diff.get('deleted')), 1)
+        self.assertEmpty(diff.get('inserted'))
+        self.assertEmpty(diff.get('appended'))
+
+    @sync
+    async def test_delete_blank(self):
+        new_html = self.html.replace('\n', '')
+        new_node = parse_html(new_html)
+        diff = await find_diff_node(self.base_node, new_node)
+        self.assertEmpty(diff.get('deleted'))
         self.assertEmpty(diff.get('inserted'))
         self.assertEmpty(diff.get('appended'))
 
@@ -135,4 +162,22 @@ class TextFindDiffNode(TestCase):
         diff = await find_diff_node(self.base_node, new_node)
         self.assertEmpty(diff.get('deleted'))
         self.assertEqual(len(diff.get('inserted')), 1)
+        self.assertEmpty(diff.get('appended'))
+
+    @sync
+    async def test_insert_blank_first(self):
+        new_html = '\n\n\n\n' + self.html
+        new_node = parse_html(new_html)
+        diff = await find_diff_node(self.base_node, new_node)
+        self.assertEmpty(diff.get('deleted'))
+        self.assertEmpty(diff.get('inserted'))
+        self.assertEmpty(diff.get('appended'))
+
+    @sync
+    async def test_insert_blank_middle(self):
+        new_html = self.html.replace('</h2>', '</h2>\n\n\n\n')
+        new_node = parse_html(new_html)
+        diff = await find_diff_node(self.base_node, new_node)
+        self.assertEmpty(diff.get('deleted'))
+        self.assertEmpty(diff.get('inserted'))
         self.assertEmpty(diff.get('appended'))
