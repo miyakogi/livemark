@@ -16,7 +16,7 @@ from pygments.styles import STYLE_MAP
 from pygments.formatters import HtmlFormatter
 
 current_dir = path.dirname(__file__)
-sys.path.insert(0, path.join(current_dir, 'wdom'))
+sys.path.insert(0, path.join(path.dirname(current_dir), 'wdom'))
 
 from wdom import options
 from wdom.tag import Div, Style, H2, Script, WebElement
@@ -306,3 +306,4 @@ def main():
 if __name__ == '__main__':
     options.parse_command_line()
     main()
+
