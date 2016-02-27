@@ -1,0 +1,12 @@
+language: python
+python:
+  - "3.5"
+
+install:
+  - pip install tornado misaka pygments
+  - pip install pytest pytest-cov syncer
+  - pip install codecov
+script:
+  - py.test --cov livemark
+after_success:
+  - codecov
