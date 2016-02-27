@@ -27,8 +27,6 @@ from wdom.parser import parse_html
 from converter import convert
 
 
-connections = []
-CURSOR_TAG = '<span id="vimcursor"></span>' 
 cursor_move_js = '''
         function moveToElement(id) {
             var elm = document.getElementById(id)
@@ -52,14 +50,6 @@ options.parser.define('highlight-theme', default='default', type=str)
 class MainHandler(web.RequestHandler):
     def get(self):
         self.render('main.html', css=css, port=options.config.browser_port)
-
-
-class WSHandler(websocket.WebSocketHandler):
-    def open(self):
-        connections.append(self)
-
-    def on_close(self):
-        connections.remove(self)
 
 
 class SocketListener(asyncio.Protocol):

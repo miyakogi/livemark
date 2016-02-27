@@ -3,7 +3,6 @@
 
 from livemark import convert
 
-from wdom import options
 from wdom.tests.util import TestCase
 
 
