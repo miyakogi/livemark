@@ -16,15 +16,19 @@ def is_same_node(node1:WebElement, node2:WebElement):
         return False
 
 
+def is_empty_text_node(node:WebElement):
+    if isinstance(node, WebElement):
+        return False
+    text = node.textContent
+    return not text or text.isspace()
+
+
 def next_noempty(node:WebElement):
     new_node = node.nextSibling
     while new_node is not None:
-        if isinstance(new_node, WebElement):
+        if not is_empty_text_node(new_node):
             return new_node
         else:
-            text = new_node.textContent
-            if text and not text.isspace():
-                return new_node
             new_node = new_node.nextSibling
     return None
 
