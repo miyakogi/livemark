@@ -41,6 +41,10 @@ def find_diff_node(base_node:WebElement, new_node:WebElement):
 
     node1 = base_node.firstChild
     node2 = new_node.firstChild
+    if is_empty_text_node(node1):
+        node1 = next_noempty(node1)
+    if is_empty_text_node(node2):
+        node2 = next_noempty(node2)
     last_node2 = node2
     while node1 is not None and last_node2 is not None:  # Loop over old html
         yield from asyncio.sleep(0.0)

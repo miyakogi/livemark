@@ -110,14 +110,14 @@ class TextFindDiffNode(TestCase):
         self.assertEmpty(diff.get('inserted'))
         self.assertEmpty(diff.get('appended'))
 
-    # @sync
-    # async def test_delete_first(self):
-    #     new_html = self.html.replace('<h1>text1</h1>', '')
-    #     new_node = parse_html(new_html)
-    #     diff = await find_diff_node(self.base_node, new_node)
-    #     self.assertEqual(len(diff.get('deleted')), 1)
-    #     self.assertEmpty(diff.get('inserted'))
-    #     self.assertEmpty(diff.get('appended'))
+    @sync
+    async def test_delete_first(self):
+        new_html = self.html.replace('<h1>text1</h1>', '')
+        new_node = parse_html(new_html)
+        diff = await find_diff_node(self.base_node, new_node)
+        self.assertEqual(len(diff.get('deleted')), 1)
+        self.assertEmpty(diff.get('inserted'))
+        self.assertEmpty(diff.get('appended'))
 
     @sync
     async def test_insert_first(self):
