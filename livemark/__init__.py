@@ -24,7 +24,7 @@ from wdom.document import get_document
 from wdom.server import get_app, start_server
 from wdom.parser import parse_html
 
-from converter import convert
+from livemark.converter import convert
 
 
 cursor_move_js = '''
