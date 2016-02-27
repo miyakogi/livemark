@@ -1,5 +1,10 @@
 # livemark
 
+| Branch | Test | Coverage |
+|--------|------|----------|
+| master |[![Build Status](https://travis-ci.org/miyakogi/livemark.svg?branch=master)](https://travis-ci.org/miyakogi/livemark)|[![codecov.io](https://codecov.io/github/miyakogi/livemark/coverage.svg?branch=master)](https://codecov.io/github/miyakogi/livemark?branch=master)|
+| dev |[![Build Status](https://travis-ci.org/miyakogi/livemark.svg?branch=dev)](https://travis-ci.org/miyakogi/livemark)|[![codecov.io](https://codecov.io/github/miyakogi/livemark/coverage.svg?branch=dev)](https://codecov.io/github/miyakogi/livemark?branch=dev)|
+
 Real time markdown preview server
 
 ## Requirements
