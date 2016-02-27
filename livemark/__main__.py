@@ -20,7 +20,7 @@ from wdom.document import get_document
 from wdom.server import get_app, start_server
 from wdom.parser import parse_html
 
-from livemark.diff import _is_same_node, _next_noempty
+from livemark.diff import find_diff_node
 from livemark.converter import convert
 
 
@@ -101,7 +101,7 @@ class Preview(Div):
         if self.length < 1:
             self.appendChild(fragment)
         else:
-            diff = yield from self.find_diff_node(fragment)
+            diff = yield from find_diff_node(self, fragment)
             for _i in diff['inserted']:
                 self.insertBefore(_i[1], _i[0])
             for _d in diff['deleted']:
@@ -151,54 +151,6 @@ class Preview(Div):
     def move_to(self, id):
         script = 'moveToElement("{}")'.format(id)
         self.js_exec('eval', script=script)
-
-    @asyncio.coroutine
-    def find_diff_node(self, tree):
-        _deleted = []
-        _inserted = []
-        _appended = []
-
-        node1 = self.firstChild
-        node2 = tree.firstChild
-        last_node2 = node2
-        while node1 is not None and last_node2 is not None:  # Loop over old html
-            yield from asyncio.sleep(0.0)
-            if _is_same_node(node1, node2):
-                node1 = _next_noempty(node1)
-                node2 = _next_noempty(node2)
-                last_node2 = node2
-            else:
-                _pending = [node2]
-                while True:  # Loop over new html
-                    node2 = node2.nextSibling
-                    if node2 is None:
-                        _deleted.append(node1)
-                        node1 = _next_noempty(node1)
-                        node2 = last_node2
-                        break
-                    elif _is_same_node(node1, node2):
-                        for n in _pending:
-                            _inserted.append((node1, n))
-                        node1 = _next_noempty(node1)
-                        node2 = _next_noempty(node2)
-                        last_node2 = node2
-                        break
-                    else:
-                        _pending.append(node2)
-
-        if node1 is not None:
-            n = node1
-            while n is not None:
-                _deleted.append(n)
-                n = _next_noempty(n)
-        elif last_node2 is not None:
-            n = last_node2
-            while n is not None:
-                _appended.append(n)
-                n = _next_noempty(n)
-
-        return {'deleted': _deleted, 'inserted': _inserted,
-                'appended': _appended}
 
 
 class SocketServer(object):
