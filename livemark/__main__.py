@@ -20,6 +20,7 @@ from wdom.document import get_document
 from wdom.server import get_app, start_server
 from wdom.parser import parse_html
 
+from livemark.diff import _is_same_node, _next_noempty
 from livemark.converter import convert
 
 
@@ -50,29 +51,6 @@ class MainHandler(web.RequestHandler):
 
 class SocketListener(asyncio.Protocol):
     pass
-
-
-def _is_same_node(node1, node2):
-    if node1.nodeType == node2.nodeType:
-        if node1.nodeType in (node1.TEXT_NODE, node1.COMMENT_NODE):
-            return node1.textContent == node2.textContent
-        else:
-            return node1.html_noid == node2.html_noid
-    else:
-        return False
-
-
-def _next_noempty(node):
-    new_node = node.nextSibling
-    while new_node is not None:
-        if isinstance(new_node, WebElement):
-            return new_node
-        else:
-            text = new_node.textContent
-            if text and not text.isspace():
-                return new_node
-            new_node = new_node.nextSibling
-    return None
 
 
 class Preview(Div):
