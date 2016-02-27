@@ -47,7 +47,7 @@ def find_diff_node(base_node:WebElement, new_node:WebElement):
         else:
             _pending = [node2]
             while True:  # Loop over new html
-                node2 = node2.nextSibling
+                node2 = _next_noempty(node2)
                 if node2 is None:
                     _deleted.append(node1)
                     node1 = _next_noempty(node1)
