@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import sys
 from os import path
 import json
 import asyncio
@@ -13,6 +14,10 @@ from tornado.platform.asyncio import AsyncIOMainLoop
 
 from pygments.styles import STYLE_MAP
 from pygments.formatters import HtmlFormatter
+
+current_dir = path.dirname(__file__)
+sys.path.insert(0, path.dirname(current_dir))
+sys.path.insert(0, path.join(path.dirname(current_dir), 'wdom'))
 
 from wdom import options
 from wdom.tag import Div, Style, H2, Script, WebElement
@@ -41,7 +46,6 @@ options.parser.define('vim-port', default=8090, type=int)
 options.parser.define('js-files', default=[], nargs='+')
 options.parser.define('css-files', default=[], nargs='+')
 options.parser.define('highlight-theme', default='default', type=str)
-
 
 
 class MainHandler(web.RequestHandler):
@@ -232,5 +236,3 @@ def main():
 if __name__ == '__main__':
     options.parse_command_line()
     main()
-
-
