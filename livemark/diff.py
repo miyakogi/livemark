@@ -33,7 +33,6 @@ def next_noempty(node: WdomElement):
     return None
 
 
-@asyncio.coroutine
 def find_diff_node(base_node: WdomElement, new_node: WdomElement):
     _deleted = []
     _inserted = []
@@ -47,7 +46,6 @@ def find_diff_node(base_node: WdomElement, new_node: WdomElement):
         node2 = next_noempty(node2)
     last_node2 = node2
     while node1 is not None and last_node2 is not None:  # Loop over old html
-        yield from asyncio.sleep(0.0)
         if is_same_node(node1, node2):
             node1 = next_noempty(node1)
             node2 = next_noempty(node2)

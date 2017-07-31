@@ -7,12 +7,11 @@ from argparse import ArgumentParser
 import json
 import asyncio
 import webbrowser
-from functools import partial
 
-from tornado import web
+from tornado import web  # type: ignore
 
 from pygments.styles import STYLE_MAP
-from pygments.formatters import HtmlFormatter
+from pygments.formatters import HtmlFormatter  # type: ignore
 
 current_dir = path.dirname(__file__)
 sys.path.insert(0, path.dirname(current_dir))
@@ -21,7 +20,8 @@ sys.path.insert(0, path.join(path.dirname(current_dir), 'wdom'))
 
 cursor_move_js = '''
         function moveToElement(id) {
-            var elm = document.getElementById(id)
+            var elm = document.querySelector('[rimo_id="' + id + '"]')
+            console.log(elm)
             if (elm) {
                 var x = window.scrollX
                 var rect = elm.getBoundingClientRect()
@@ -40,14 +40,14 @@ parser.add_argument('--highlight-theme', default='default', type=str)
 config = parser.parse_args()
 sys.argv[1:] = []
 
-from wdom.tag import Div, Style, H2, Script, WdomElement
-from wdom.document import get_document
-from wdom.server import get_app, start_server
-from wdom.parser import parse_html
-from wdom.util import install_asyncio
+from wdom.tag import Div, Style, H2, Script, WdomElement  # noqa: E402
+from wdom.document import get_document  # noqa: E402
+from wdom.server import get_app, start_server  # noqa: E402
+from wdom.parser import parse_html  # noqa: E402
+from wdom.util import install_asyncio  # noqa: E402
 
-from livemark.diff import find_diff_node
-from livemark.converter import convert
+from livemark.diff import find_diff_node  # noqa: E402
+from livemark.converter import convert  # noqa: E402
 
 
 class MainHandler(web.RequestHandler):
@@ -64,16 +64,8 @@ class Preview(Div):
         super().__init__(*args, **kwargs)
         self.tlist = []
         self.dom_tree = None
-        self._tasks = []
-
-    def _canncel_tasks(self):
-        for task in self._tasks:
-            if not task.done() and not task.cancelled():
-                task.cancel()
-            self._tasks.remove(task)
 
     def data_received(self, data):
-        self._canncel_tasks()
         line = data['line']
         event = data['event']
         if event == 'update':
@@ -83,31 +75,24 @@ class Preview(Div):
             _task = self.move_cursor
         else:
             raise ValueError('Get unknown event: {}'.format(event))
-        try:
-            self._tasks.append(asyncio.ensure_future(_task(line)))
-        except asyncio.CancelledError:
-            pass
+        _task(line)
 
-    @asyncio.coroutine
     def update_preview(self, line):
-        html = yield from self.convert_to_html(self.tlist)
-        yield from self.mount_html(html)
-        yield from self.move_cursor(line)
+        html = self.convert_to_html(self.tlist)
+        self.mount_html(html)
+        self.move_cursor(line)
 
-    @asyncio.coroutine
     def convert_to_html(self, tlist):
         md = '\n'.join(tlist)
-        yield from asyncio.sleep(0.0)
         return convert(md)
 
-    @asyncio.coroutine
     def mount_html(self, html):
         fragment = parse_html(html)
         self.dom_tree = fragment.cloneNode(True)
         if self.length < 1:
             self.appendChild(fragment)
         else:
-            diff = yield from find_diff_node(self, fragment)
+            diff = find_diff_node(self, fragment)
             for _i in diff['inserted']:
                 self.insertBefore(_i[1], _i[0])
             for _d in diff['deleted']:
@@ -115,7 +100,6 @@ class Preview(Div):
             for _a in diff['appended']:
                 self.appendChild(_a)
 
-    @asyncio.coroutine
     def move_cursor(self, line):
         if line < 0:
             return
@@ -146,12 +130,12 @@ class Preview(Div):
                 top_node = self.childNodes[node_n - 1]
             if top_node is not None:
                 if isinstance(top_node, WdomElement):
-                    self.move_to(top_node.id)
+                    self.move_to(top_node.rimo_id)
                 else:
                     while top_node is not None:
                         top_node = top_node.previousSibling
                         if isinstance(top_node, WdomElement):
-                            self.move_to(top_node.id)
+                            self.move_to(top_node.rimo_id)
                             break
 
     def move_to(self, id):
@@ -160,7 +144,8 @@ class Preview(Div):
 
 
 class SocketServer(object):
-    def __init__(self, address='localhost', port=8090, loop=None, preview=None):
+    def __init__(self, address='localhost', port=8090, loop=None,
+                 preview=None):
         self.address = address
         self.port = port
         if loop is None:
