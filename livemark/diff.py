@@ -3,10 +3,10 @@
 
 import asyncio
 
-from wdom.tag import WebElement
+from wdom.tag import WdomElement
 
 
-def is_same_node(node1:WebElement, node2:WebElement):
+def is_same_node(node1: WdomElement, node2: WdomElement):
     if node1.nodeType == node2.nodeType:
         if node1.nodeType in (node1.TEXT_NODE, node1.COMMENT_NODE):
             return node1.textContent == node2.textContent
@@ -16,14 +16,14 @@ def is_same_node(node1:WebElement, node2:WebElement):
         return False
 
 
-def is_empty_text_node(node:WebElement):
-    if isinstance(node, WebElement):
+def is_empty_text_node(node: WdomElement):
+    if isinstance(node, WdomElement):
         return False
     text = node.textContent
     return not text or text.isspace()
 
 
-def next_noempty(node:WebElement):
+def next_noempty(node: WdomElement):
     new_node = node.nextSibling
     while new_node is not None:
         if not is_empty_text_node(new_node):
@@ -34,7 +34,7 @@ def next_noempty(node:WebElement):
 
 
 @asyncio.coroutine
-def find_diff_node(base_node:WebElement, new_node:WebElement):
+def find_diff_node(base_node: WdomElement, new_node: WdomElement):
     _deleted = []
     _inserted = []
     _appended = []

@@ -3,14 +3,13 @@
 
 import sys
 from os import path
+from argparse import ArgumentParser
 import json
 import asyncio
 import webbrowser
 from functools import partial
 
 from tornado import web
-from tornado import websocket
-from tornado.platform.asyncio import AsyncIOMainLoop
 
 from pygments.styles import STYLE_MAP
 from pygments.formatters import HtmlFormatter
@@ -18,15 +17,6 @@ from pygments.formatters import HtmlFormatter
 current_dir = path.dirname(__file__)
 sys.path.insert(0, path.dirname(current_dir))
 sys.path.insert(0, path.join(path.dirname(current_dir), 'wdom'))
-
-from wdom import options
-from wdom.tag import Div, Style, H2, Script, WebElement
-from wdom.document import get_document
-from wdom.server import get_app, start_server
-from wdom.parser import parse_html
-
-from livemark.diff import find_diff_node
-from livemark.converter import convert
 
 
 cursor_move_js = '''
@@ -40,17 +30,29 @@ cursor_move_js = '''
         }
     '''
 
-options.parser.define('browser', default='google-chrome', type=str)
-options.parser.define('browser-port', default=8089, type=int)
-options.parser.define('vim-port', default=8090, type=int)
-options.parser.define('js-files', default=[], nargs='+')
-options.parser.define('css-files', default=[], nargs='+')
-options.parser.define('highlight-theme', default='default', type=str)
+parser = ArgumentParser()
+parser.add_argument('--browser', default='google-chrome', type=str)
+parser.add_argument('--browser-port', default=8089, type=int)
+parser.add_argument('--vim-port', default=8090, type=int)
+parser.add_argument('--js-files', default=[], nargs='+', type=str)
+parser.add_argument('--css-files', default=[], nargs='+', type=str)
+parser.add_argument('--highlight-theme', default='default', type=str)
+config = parser.parse_args()
+sys.argv[1:] = []
+
+from wdom.tag import Div, Style, H2, Script, WdomElement
+from wdom.document import get_document
+from wdom.server import get_app, start_server
+from wdom.parser import parse_html
+from wdom.util import install_asyncio
+
+from livemark.diff import find_diff_node
+from livemark.converter import convert
 
 
 class MainHandler(web.RequestHandler):
     def get(self):
-        self.render('main.html', css=css, port=options.config.browser_port)
+        self.render('main.html', port=config.browser_port)
 
 
 class SocketListener(asyncio.Protocol):
@@ -143,18 +145,18 @@ class Preview(Div):
             else:
                 top_node = self.childNodes[node_n - 1]
             if top_node is not None:
-                if isinstance(top_node, WebElement):
+                if isinstance(top_node, WdomElement):
                     self.move_to(top_node.id)
                 else:
                     while top_node is not None:
                         top_node = top_node.previousSibling
-                        if isinstance(top_node, WebElement):
+                        if isinstance(top_node, WdomElement):
                             self.move_to(top_node.id)
                             break
 
     def move_to(self, id):
         script = 'moveToElement("{}")'.format(id)
-        self.js_exec('eval', script=script)
+        self.js_exec('eval', script)
 
 
 class SocketServer(object):
@@ -191,22 +193,22 @@ class SocketServer(object):
 
 
 def main():
-    AsyncIOMainLoop().install()
+    install_asyncio()
 
     doc = get_document()
     doc.title = 'LiveMark'
     _user_static_dirs = set()
-    for js in options.config.js_files:
+    for js in config.js_files:
         _user_static_dirs.add(path.dirname(js))
         doc.add_jsfile(js)
-    for css in options.config.css_files:
+    for css in config.css_files:
         _user_static_dirs.add(path.dirname(css))
         doc.add_cssfile(css)
 
     # choices arg is better, but detecting error is not easy in livemark.vim
-    if options.config.highlight_theme in STYLE_MAP:
+    if config.highlight_theme in STYLE_MAP:
         pygments_style = HtmlFormatter(
-            style=options.config.highlight_theme).get_style_defs()
+            style=config.highlight_theme).get_style_defs()
     else:
         pygments_style = HtmlFormatter('default').get_style_defs()
     doc.head.appendChild(Style(pygments_style))
@@ -215,16 +217,16 @@ def main():
     script.textContent = cursor_move_js
     preview = Preview(parent=doc.body, class_='container')
     preview.appendChild(H2('LiveMark is running...'))
-    app = get_app(doc)
+    app = get_app()
     for _d in _user_static_dirs:
         app.add_static_path(_d, _d)
-    web_server = start_server(app, port=options.config.browser_port)
+    web_server = start_server(app, port=config.browser_port)
 
     loop = asyncio.get_event_loop()
-    sock_server = SocketServer(port=options.config.vim_port, loop=loop,
+    sock_server = SocketServer(port=config.vim_port, loop=loop,
                                preview=preview)
-    browser = webbrowser.get(options.config.browser)
-    browser.open('http://localhost:{}'.format(options.config.browser_port))
+    browser = webbrowser.get(config.browser)
+    browser.open('http://localhost:{}'.format(config.browser_port))
     try:
         sock_server.start()
         loop.run_forever()
@@ -234,5 +236,4 @@ def main():
 
 
 if __name__ == '__main__':
-    options.parse_command_line()
     main()
