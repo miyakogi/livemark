@@ -3,10 +3,8 @@
 
 import sys
 from os import path
-from argparse import ArgumentParser
 import json
 import asyncio
-import webbrowser
 
 from tornado import web  # type: ignore
 
@@ -17,11 +15,20 @@ current_dir = path.dirname(__file__)
 sys.path.insert(0, path.dirname(current_dir))
 sys.path.insert(0, path.join(path.dirname(current_dir), 'wdom'))
 
+from wdom.options import config, parser, parse_command_line
+from wdom.tag import Div, Style, H2, Script, WdomElement
+from wdom.document import get_document
+from wdom.server import start_server, add_static_path
+from wdom.parser import parse_html
+from wdom.util import install_asyncio
+
+from livemark.diff import find_diff_node
+from livemark.converter import convert
+
 
 cursor_move_js = '''
         function moveToElement(id) {
             var elm = document.querySelector('[rimo_id="' + id + '"]')
-            console.log(elm)
             if (elm) {
                 var x = window.scrollX
                 var rect = elm.getBoundingClientRect()
@@ -30,29 +37,11 @@ cursor_move_js = '''
         }
     '''
 
-parser = ArgumentParser()
-parser.add_argument('--browser', default='google-chrome', type=str)
-parser.add_argument('--browser-port', default=8089, type=int)
 parser.add_argument('--vim-port', default=8090, type=int)
 parser.add_argument('--js-files', default=[], nargs='+', type=str)
 parser.add_argument('--css-files', default=[], nargs='+', type=str)
 parser.add_argument('--highlight-theme', default='default', type=str)
-config = parser.parse_args()
-sys.argv[1:] = []
-
-from wdom.tag import Div, Style, H2, Script, WdomElement  # noqa: E402
-from wdom.document import get_document  # noqa: E402
-from wdom.server import get_app, start_server  # noqa: E402
-from wdom.parser import parse_html  # noqa: E402
-from wdom.util import install_asyncio  # noqa: E402
-
-from livemark.diff import find_diff_node  # noqa: E402
-from livemark.converter import convert  # noqa: E402
-
-
-class MainHandler(web.RequestHandler):
-    def get(self):
-        self.render('main.html', port=config.browser_port)
+parse_command_line()
 
 
 class SocketListener(asyncio.Protocol):
@@ -202,16 +191,13 @@ def main():
     script.textContent = cursor_move_js
     preview = Preview(parent=doc.body, class_='container')
     preview.appendChild(H2('LiveMark is running...'))
-    app = get_app()
     for _d in _user_static_dirs:
-        app.add_static_path(_d, _d)
-    web_server = start_server(app, port=config.browser_port)
+        add_static_path(_d, _d)
+    web_server = start_server()
 
     loop = asyncio.get_event_loop()
     sock_server = SocketServer(port=config.vim_port, loop=loop,
                                preview=preview)
-    browser = webbrowser.get(config.browser)
-    browser.open('http://localhost:{}'.format(config.browser_port))
     try:
         sock_server.start()
         loop.run_forever()
