@@ -10,11 +10,15 @@ from pygments.styles import STYLE_MAP  # type: ignore
 from pygments.formatters import HtmlFormatter  # type: ignore
 
 current_dir = path.dirname(__file__)
-sys.path.insert(0, path.dirname(current_dir))
-sys.path.insert(0, path.join(path.dirname(current_dir), 'wdom'))
+try:
+    import wdom  # noqa
+except ImportError:
+    sys.path.insert(0, path.dirname(current_dir))
+    sys.path.insert(0, path.join(path.dirname(current_dir), 'wdom'))
 
 from wdom.options import config, parser, parse_command_line  # noqa: F401
-from wdom.tag import Div, Style, H2, Script, WdomElement, RawHtmlNode  # noqa: F401
+from wdom.themes import default  # noqa: E402
+from wdom.themes.default import Div, Style, H2, Script, RawHtmlNode  # noqa
 from wdom.document import get_document  # noqa: F401
 from wdom.server import start_server, add_static_path  # noqa: F401
 from wdom.util import install_asyncio  # noqa: F401
@@ -132,14 +136,8 @@ def main():
     install_asyncio()
 
     doc = get_document()
+    doc.register_theme(default)
     doc.title = 'LiveMark'
-    _user_static_dirs = set()
-    for js in config.js_files:
-        _user_static_dirs.add(path.dirname(js))
-        doc.add_jsfile(js)
-    for css in config.css_files:
-        _user_static_dirs.add(path.dirname(css))
-        doc.add_cssfile(css)
 
     # choices arg is better, but detecting error is not easy in livemark.vim
     if config.highlight_theme in STYLE_MAP:
@@ -151,9 +149,8 @@ def main():
 
     script = Script(parent=doc.body)
     script.textContent = cursor_move_js
-    preview = Preview(parent=doc.body, class_='container')
-    for _d in _user_static_dirs:
-        add_static_path(_d, _d)
+    preview = Preview(style='padding: 3rem 10vw;')
+    doc.body.appendChild(preview)
     web_server = start_server()
 
     loop = asyncio.get_event_loop()
